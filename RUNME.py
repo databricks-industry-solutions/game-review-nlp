@@ -37,35 +37,35 @@ job_json = {
         "max_concurrent_runs": 1,
         "tags": {
             "usage": "solacc_testing",
-            "group": "SOLACC",
-            "accelerator": "sample-solacc"
+            "group": "CME",
+            "accelerator": "game-review"
         },
         "tasks": [
             {
-                "job_cluster_key": "sample_solacc_cluster",
+                "job_cluster_key": "game_review_cluster",
                 "notebook_task": {
-                    "notebook_path": f"01_Introduction_And_Setup"
+                    "notebook_path": f"01_ABSA"
                 },
-                "task_key": "sample_solacc_01"
+                "task_key": "game_review_01"
             },
             {
-                "job_cluster_key": "sample_solacc_cluster",
+                "job_cluster_key": "game_review_cluster",
                 "notebook_task": {
-                    "notebook_path": f"02_Analysis"
+                    "notebook_path": f"02_langchain_QA"
                 },
-                "task_key": "sample_solacc_02",
+                "task_key": "game_review_02",
                 "depends_on": [
                     {
-                        "task_key": "sample_solacc_01"
+                        "task_key": "game_review_01"
                     }
                 ]
             }
         ],
         "job_clusters": [
             {
-                "job_cluster_key": "sample_solacc_cluster",
+                "job_cluster_key": "game_review_cluster",
                 "new_cluster": {
-                    "spark_version": "11.3.x-cpu-ml-scala2.12",
+                    "spark_version": "12.2.x-cpu-ml-scala2.12",
                 "spark_conf": {
                     "spark.databricks.delta.formatCheck.enabled": "false"
                     },
@@ -73,8 +73,11 @@ job_json = {
                     "node_type_id": {"AWS": "i3.xlarge", "MSA": "Standard_DS3_v2", "GCP": "n1-highmem-4"},
                     "custom_tags": {
                         "usage": "solacc_testing",
-                        "group": "SOLACC",
-                        "accelerator": "sample-solacc"
+                        "group": "CME",
+                        "accelerator": "game-review"
+                    },
+                    "spark_conf": {
+                        "spark.task.cpus": "8"
                     },
                 }
             }
