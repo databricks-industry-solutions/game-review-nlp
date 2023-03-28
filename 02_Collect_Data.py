@@ -32,6 +32,13 @@
 
 # COMMAND ----------
 
+import requests
+from delta import DeltaTable
+from typing import Tuple
+from pyspark.sql import functions as F
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC ## Step 2: Create tables
 
@@ -85,9 +92,6 @@
 
 # COMMAND ----------
 
-import requests
-from delta import DeltaTable
-
 def update_applist_bronze(applist_bronze_table_name: str) -> None:
     """Update the app reviews table."""
     url = 'https://api.steampowered.com/ISteamApps/GetAppList/v2/'
@@ -120,9 +124,6 @@ update_applist_bronze(applist_bronze_table_name)
 # MAGIC take roughly an hour to backfill the entire dataset.**
 
 # COMMAND ----------
-
-from typing import Tuple
-from pyspark.sql import functions as F
 
 def update_appreviews_bronze(
     reviews_table_name: str, 
@@ -208,7 +209,10 @@ def update_appreviews_bronze(
 
     return status, cursor
 
-appid = 570  # appid 570 is DotA 2
+# DotA 2: 570
+# New World: 1063730
+appid = 1063730
+
 appreviews_bronze_table_name = 'steam_appreviews_bronze'
-status, cursor = update_appreviews_bronze(appreviews_bronze_table_name, appid, backfill=False)
+status, cursor = update_appreviews_bronze(appreviews_bronze_table_name, appid, backfill=True)
 print(status, cursor)
