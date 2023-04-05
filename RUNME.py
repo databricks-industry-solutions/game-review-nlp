@@ -37,52 +37,72 @@ job_json = {
         "max_concurrent_runs": 1,
         "tags": {
             "usage": "solacc_testing",
-            "group": "SOLACC",
-            "accelerator": "sample-solacc"
+            "group": "CME",
+            "accelerator": "game-review"
         },
         "tasks": [
             {
-                "job_cluster_key": "sample_solacc_cluster",
+                "job_cluster_key": "game_review_cluster",
                 "notebook_task": {
                     "notebook_path": f"01_Introduction_And_Setup"
                 },
-                "task_key": "sample_solacc_01"
+                "task_key": "game_review_01"
             },
             {
-                "job_cluster_key": "sample_solacc_cluster",
+                "job_cluster_key": "game_review_cluster",
                 "notebook_task": {
-                    "notebook_path": f"02_Analysis"
+                    "notebook_path": f"02_Collect_Data"
                 },
-                "task_key": "sample_solacc_02",
+                "task_key": "game_review_02",
                 "depends_on": [
                     {
-                        "task_key": "sample_solacc_01"
+                        "task_key": "game_review_01"
+                    }
+                ]
+            },
+            {
+                "job_cluster_key": "game_review_cluster",
+                "notebook_task": {
+                    "notebook_path": f"03_langchain_QA"
+                },
+                "task_key": "game_review_03",
+                "depends_on": [
+                    {
+                        "task_key": "game_review_02"
                     }
                 ]
             }
         ],
         "job_clusters": [
             {
-                "job_cluster_key": "sample_solacc_cluster",
+                "job_cluster_key": "game_review_cluster",
                 "new_cluster": {
-                    "spark_version": "11.3.x-cpu-ml-scala2.12",
+                    "spark_version": "12.2.x-cpu-ml-scala2.12",
                 "spark_conf": {
                     "spark.databricks.delta.formatCheck.enabled": "false"
                     },
-                    "num_workers": 2,
-                    "node_type_id": {"AWS": "i3.xlarge", "MSA": "Standard_DS3_v2", "GCP": "n1-highmem-4"},
+                    "num_workers": 1,
+                    "node_type_id": {"AWS": "r5d.8xlarge", "MSA": "Standard_E64_v3", "GCP": "n1-highmem-64"},
                     "custom_tags": {
                         "usage": "solacc_testing",
-                        "group": "SOLACC",
-                        "accelerator": "sample-solacc"
+                        "group": "CME",
+                        "accelerator": "game-review"
+                    },
+                    "spark_conf": {
+                        "spark.task.cpus": "8"
                     },
                 }
             }
         ]
     }
 
+
 # COMMAND ----------
 
 dbutils.widgets.dropdown("run_job", "False", ["True", "False"])
 run_job = dbutils.widgets.get("run_job") == "True"
 NotebookSolutionCompanion().deploy_compute(job_json, run_job=run_job)
+
+# COMMAND ----------
+
+
