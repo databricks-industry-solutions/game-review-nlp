@@ -92,6 +92,25 @@ job_json = {
                         "spark.task.cpus": "8"
                     },
                 }
+            },
+            {
+                "job_cluster_key": "game_review_cluster_gpu",
+                "new_cluster": {
+                    "spark_version": "12.2.x-gpu-ml-scala2.12",
+                "spark_conf": {
+                    "spark.databricks.delta.formatCheck.enabled": "false"
+                    },
+                    "num_workers": 1,
+                    "node_type_id": {"AWS": "g5.4xlarge"}, # , "MSA": "Standard_E64_v3", "GCP": "n1-highmem-64"
+                    "custom_tags": {
+                        "usage": "solacc_testing",
+                        "group": "CME",
+                        "accelerator": "game-review"
+                    },
+                    # "spark_conf": {
+                    #     "spark.task.cpus": "8"
+                    # },
+                }
             }
         ]
     }

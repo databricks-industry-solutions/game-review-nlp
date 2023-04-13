@@ -4,11 +4,10 @@
 # MAGIC GPU cluster is not necessary. Use a high-mem type, and set `spark.task.cpus` to 8.
 # MAGIC 
 # MAGIC Please run the `RUNME` notebook to generate a cluster that satisfies these requirement.
-# MAGIC Tweak faiss's version
 
 # COMMAND ----------
 
-# MAGIC %pip install -U transformers langchain chromadb pypdf pycryptodome accelerate faiss-cpu
+# MAGIC %pip install -U transformers langchain chromadb pypdf pycryptodome accelerate
 
 # COMMAND ----------
 
@@ -48,7 +47,7 @@ review_texts = spark.sql("""select recommendationid, timestamp_created, review f
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 text_splitter = RecursiveCharacterTextSplitter(
-    chunk_size = 400,
+    chunk_size = 100,
     chunk_overlap  = 0,
     length_function = len,
 )
@@ -60,21 +59,14 @@ documents = text_splitter.create_documents(collected_review_text, collected_revi
 
 # COMMAND ----------
 
-
-
-# COMMAND ----------
-
 # DBTITLE 1,Initialize the location for our vector store
 from langchain.docstore.document import Document
 from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.vectorstores import Chroma, FAISS
+from langchain.vectorstores import Chroma
 import os
 
-
-# db_persist_path_FAISS = f"{cloud_storage_path}langchain/FAISS/db" 
 db_persist_path_chroma = f"{cloud_storage_path}langchain/chroma/db" 
 hf_embed = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
-# FAISS_exists = os.path.exists(f"/dbfs{db_persist_path_FAISS}/") #TODO
 chroma_exists = os.path.isfile(f"/dbfs{db_persist_path_chroma}/chroma-embeddings.parquet")
 
 if reuse_existing_vector_store and chroma_exists:
@@ -85,15 +77,6 @@ else:
   db = Chroma.from_documents(collection_name="new_world_reviews", documents=documents, embedding=hf_embed, persist_directory=f"/dbfs{db_persist_path_chroma}")
   db.similarity_search("dummy") # tickle it to persist metadata (?)
   db.persist()
-
-# if reuse_existing_vector_store and FAISS_exists:
-#   db = FAISS.load_local(db_persist_path_FAISS, hf_embed)
-# else:
-#   dbutils.fs.rm(db_persist_path_FAISS, True)
-#   dbutils.fs.mkdirs(db_persist_path_FAISS)
-#   db = FAISS.from_documents(documents, hf_embed)
-#   # db.similarity_search("dummy") # tickle it to persist metadata (?)
-#   db.save_local(db_persist_path_FAISS)
 
 # COMMAND ----------
 
@@ -143,7 +126,7 @@ def build_qa_chain():
 
   hf_pipe = HuggingFacePipeline(pipeline=pipe)
   # Set verbose=True to see the full prompt:
-  return load_qa_chain(llm=hf_pipe, chain_type="stuff", prompt=prompt)
+  return load_qa_chain(llm=hf_pipe, chain_type="stuff", prompt=prompt, verbose=True)
 
 # COMMAND ----------
 
@@ -179,6 +162,8 @@ def answer_question(question, k=2):
     print(d.metadata)
     print(d.page_content)
 
+  print("=" * 100)
+
 # COMMAND ----------
 
 question_list = ["What are the negative points related to player versus player (pvp) and factions?",
@@ -191,74 +176,9 @@ question_list = ["What are the negative points related to player versus player (
 # COMMAND ----------
 
 for q in question_list:
-  answer_question(q, k=2)
-
-# COMMAND ----------
-
-db = FAISS.load_local(db_persist_path_FAISS, hf_embed)
-
-# COMMAND ----------
-
-q = question_list[0]
-
-# COMMAND ----------
-
-from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
-import torch
-from langchain import PromptTemplate
-from langchain.llms import HuggingFacePipeline
-from langchain.chains.question_answering import load_qa_chain
-
-def build_qa_chain(use_cache=False):
-  torch.cuda.empty_cache() # Not sure this is helping in all cases, but can free up a little GPU mem
-  model_name = "databricks/dolly-v1-6b"
-  tokenizer = AutoTokenizer.from_pretrained(model_name, padding_side="left", local_files_only=use_cache)
-  model = AutoModelForCausalLM.from_pretrained(model_name, device_map="auto", torch_dtype=torch.bfloat16, local_files_only=use_cache, trust_remote_code=True)
-
-  template = """Below is an instruction that describes a task. Write a response that appropriately completes the request.
-
-  ### Instruction:
-  Use only information in the following paragraphs to answer the question at the end. Explain the answer with reference to these paragraphs. If you don't know, say that you do not know.
-
-  {context}
-
-  {question}
-
-  ### Response:
-  """
-  prompt = PromptTemplate(input_variables=['context', 'question'], template=template)
-
-  end_key_token_id = tokenizer.encode("### End")[0]
-
-  #pipe = pipeline("text-generation", model=model, tokenizer=tokenizer, \
-  #  pad_token_id=tokenizer.pad_token_id, eos_token_id=end_key_token_id, \
-  #  do_sample=False, max_new_tokens=128, num_beams=2, num_beam_groups=2)
-
-  # Increase max_new_tokens for a longer response
-  # Other settings might give better results! Play around
-  pipe = pipeline("text-generation", model=model, tokenizer=tokenizer, \
-    pad_token_id=tokenizer.pad_token_id, eos_token_id=end_key_token_id, \
-    do_sample=True, max_new_tokens=128, top_p=0.95, top_k=50)
-
-  hf_pipe = HuggingFacePipeline(pipeline=pipe)
-  # Set verbose=True to see the full prompt:
-  return load_qa_chain(llm=hf_pipe, chain_type="stuff", prompt=prompt)
-
-# COMMAND ----------
-
-# Now we can load the persisted database from disk, and use it as normal. 
-
-from langchain.chains.qa_with_sources import load_qa_with_sources_chain
-from langchain.llms import OpenAI
-
-
-# COMMAND ----------
-
-qa.run()
-
-# COMMAND ----------
-
-question_list
+  print(f"\n== QUESTION: {q}\n")
+  response = answer_question(q, k=4)
+  print(f"== RESPONSE: {response}")
 
 # COMMAND ----------
 
