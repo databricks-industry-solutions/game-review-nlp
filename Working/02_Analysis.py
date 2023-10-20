@@ -1,10 +1,27 @@
 # Databricks notebook source
 # MAGIC %md
+# MAGIC # NLP Analysis of Game Reviews
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ## 0. Initiate Data Prep from 00 Notebook
 
 # COMMAND ----------
 
 # MAGIC %run "../Working/01_Data Preparation"
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC
+# MAGIC ### 0a. Initialize Variables (maybe parameterize this?)
+
+# COMMAND ----------
+
+chunk_name_list = ['server','servers']
+
+#results_path = "/Users/eduardo.brasileiro@databricks.com/Player-Feedback-Accelerator/Manager"
 
 # COMMAND ----------
 
@@ -15,7 +32,7 @@
 
 # MAGIC %md
 # MAGIC According to [PyPl](https://pypi.org/project/demoji/) we can use demoji to: "Accurately find or remove emojis from a blob of text using data from the Unicode Consortium's emoji code repository."
-# MAGIC 
+# MAGIC
 # MAGIC This is useful because we can not only remove emojis, but keep some meaning with them for sentiment analysis.
 
 # COMMAND ----------
@@ -51,7 +68,7 @@ def handleEmoticons(text):
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Further Cleanup on unicode and emoticons
+# MAGIC Apply the functions above to further cleanup on unicode and emoticons.
 
 # COMMAND ----------
 
@@ -85,8 +102,14 @@ display(reviewsDF_filtered_cleaned)
 # COMMAND ----------
 
 # MAGIC %md
+# MAGIC <b>This is important:</b><br>
 # MAGIC In order to run this successfully, intall this Maven package on the cluster:<br><br>
 # MAGIC *com.johnsnowlabs.nlp:spark-nlp_2.12:4.2.0*
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC This pipeline prepares, normalizes, tokenizes, and ultimately pulls out aspect based sentiment analysis. Further comments about each step are in the code block below.
 
 # COMMAND ----------
 
@@ -171,6 +194,11 @@ nlp_pipeline = Pipeline(stages=[
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC One of the best benefits of running ML pipelines in Databricks is having managed MLFlow. The model below gets automatically logged as an experiment.
+
+# COMMAND ----------
+
 result = nlp_pipeline.fit(reviewsDF_filtered_cleaned).transform(reviewsDF_filtered_cleaned)
 
 # COMMAND ----------
@@ -179,6 +207,12 @@ result.printSchema()
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC Here we cache the result from the model so that this result only gets run once. The results will then be in memory so that they can quickly be accessed for the following steps.
+
+# COMMAND ----------
+
+result.cache()
 display(result.select("normalizedDocument.result"))
 
 # COMMAND ----------
@@ -198,14 +232,55 @@ display(finalResults)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC This is currently hard coded for football manager, let's either remove this or code it to be relevant to the game being queried.
+# MAGIC Let's visually inspect some of the results. Since server reviews are pretty common, we'll check for server and servers chunks.
 
 # COMMAND ----------
 
-# Visually inspect some of the results
-analyzeManagerAspect = finalResults.filter((finalResults.chunk=='manager') | (finalResults.chunk=="football manager"))
+analyzeManagerAspect = finalResults.filter(finalResults.chunk.isin(chunk_name_list))
 display(analyzeManagerAspect)
 
 # COMMAND ----------
 
-analyzeManagerAspect.head(2)
+# MAGIC %md
+# MAGIC
+# MAGIC ## 3. Author Variable Distribution
+
+# COMMAND ----------
+
+display(finalResults)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## 4. Output data to Unity Catalog
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC We can now write these results to Unity Catalog. We will use a catalog named <i>gaming_nlp</i>.
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC USE CATALOG gaming_nlp
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC One way to organize results is by having a schema for each game, here our schema is called <i>new_world</i>.
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC
+# MAGIC DROP TABLE IF EXISTS new_world.results
+
+# COMMAND ----------
+
+database_name = "new_world"
+table_name = "results"
+
+# Use "delta" format for Unity Catalog
+finalResults.write \
+    .format("delta") \
+    .saveAsTable(f"{database_name}.{table_name}")

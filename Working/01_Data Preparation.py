@@ -1,5 +1,17 @@
 # Databricks notebook source
 # MAGIC %md
+# MAGIC # Data Preparation for Game Reviews from Steam
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC This notebook connects to the Steam API and returns a DataFrame of reviews for a particular game. The schema returned includes a text review as well as data about the author, the timestamp, and amount of time the author has spent in the game. We will use this data to parse out insights from the data as well as to group results in the dashboard by author groups.
+# MAGIC
+# MAGIC First we define functions to connect to [the Steam API](https://partner.steamgames.com/doc/webapi_overview#2).
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ## 1. Define functions to retrieve reviews
 
 # COMMAND ----------
@@ -9,11 +21,10 @@ import requests
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Create a function that hits the steam API and returns results.<br><br><b>Note:</b> Might need to add more detail, maybe Duncan?
+# MAGIC The first step is to create two functions. The first (<i>get_n_reviews</i>) controls the number of reviews and the number per page.
 
 # COMMAND ----------
 
-#@Anil - might be helpful to add a few comments here on what's going on
 def get_n_reviews(appid, n=5000):
     reviews = []
     cursor = '*'
@@ -41,6 +52,11 @@ def get_n_reviews(appid, n=5000):
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC The second (<i>get_reviews</i>) sets the URL and makes the request to the API with the parameters that come from <i>get_n_reviews</i>.
+
+# COMMAND ----------
+
 def get_reviews(appid, params={'json':1}):
         url = 'https://store.steampowered.com/appreviews/'
         response = requests.get(url=url+appid, params=params, headers={'User-Agent': 'Mozilla/5.0'})
@@ -54,26 +70,14 @@ def get_reviews(appid, params={'json':1}):
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Use [Steam REST API](https://partner.steamgames.com/doc/webapi_overview#2) to get reviews. <br><br><b>Note:</b> Add note on how to get App ID? Duncan?
+# MAGIC Use [Steam REST API](https://partner.steamgames.com/doc/webapi_overview#2) to get reviews. 
+# MAGIC <br>
+# MAGIC <br>
+# MAGIC <b>Note:</b> You can get an app ID by looking up a game on [the Steam website](https://store.steampowered.com/) and getting the ID from the URL. In the <i>review_id</i> dictionary below we include a few IDs.
 
 # COMMAND ----------
 
-# review_id = {"Football Manager":'1904540',
-#              "New World":'1063730',
-#              "Lost Ark":'1599340',
-#              "Sonic Frontiers":'1237320'}
-
-# print(review_id["New World"])
-
-# COMMAND ----------
-
-#reviews = get_n_reviews('1237320') # Sonic Frontiers
-#reviews = get_n_reviews('1599340')
-#reviews = get_n_reviews('1904540') # Sega football manager 2023
-
-# COMMAND ----------
-
-review_id = {"Football Manager":'1904540',
+review_id = {"Sega Football Manager":'1904540',
              "New World":'1063730',
              "Lost Ark":'1599340',
              "Sonic Frontiers":'1237320'}
@@ -82,12 +86,17 @@ reviews = get_n_reviews(review_id['New World']) # New World
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC From here, we will be using reviews for [New World](https://store.steampowered.com/app/1063730/New_World/). To reduce output to the screen, we've commented out the <i>display</i> below, but if you're troubleshooting or want extra output, you can uncomment it.
+
+# COMMAND ----------
+
 #display(reviews)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC # 3. Clean and subset data
+# MAGIC ## 3. Clean and subset data
 
 # COMMAND ----------
 
@@ -141,14 +150,14 @@ reviewsDF_filtered = reviewsDF \
 
 # COMMAND ----------
 
-from pyspark.sql.functions import col
+from pyspark.sql.functions import col, from_unixtime
 
 reviewsDF_filtered = reviewsDF_filtered \
         .select(col("review"),
                 col("author.steamid").alias("author_steamid"),
                 col("author.num_reviews").alias("author_num_reviews").cast("int"),
                 col("author.num_games_owned").alias("author_num_games_owned").cast("int"),
-                col("author.last_played").alias("author_last_played").cast("int"),
+                from_unixtime(col("author.last_played")).alias("author_last_played").cast("timestamp"),
                 col("author.playtime_forever").alias("author_playtime_forever").cast("int"),
                 col("author.playtime_at_review").alias("author_playtime_at_review").cast("int"),
                 col("author.playtime_last_two_weeks").alias("author_playtime_at_last_two_weeks").cast("int")
@@ -165,9 +174,9 @@ author_cols = ["author_steamid", "author_num_reviews", "author_num_games_owned",
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Output:
-# MAGIC * *reviewsDF_filtered*
-# MAGIC * *author_cols*
+# MAGIC The <i>01_Data Preparation</i> notebook outputs:
+# MAGIC * A DataFrame called *reviewsDF_filtered* which has: *review*, and *author_cols*
+# MAGIC * A Python list called *author_cols* that lists the columns related to authors
 
 # COMMAND ----------
 
