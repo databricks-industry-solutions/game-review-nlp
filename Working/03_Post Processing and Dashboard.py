@@ -150,10 +150,28 @@ display(df_avg)
 
 # MAGIC %md
 # MAGIC It appears that cluster 0 has low playtime recently and forever, cluster 1 has high playtime in the last two weeks but medium playtime forever, and cluster 2 has high playtime forever and medium-low time in the last two weeks. We can give these more descriptive names for the dashboard.
+# MAGIC
+# MAGIC Based on these numbers we can assign some descriptive names to the clusters like:
+# MAGIC
+# MAGIC 0. New to the game
+# MAGIC 1. Played a lot recently
+# MAGIC 2. Veteran who hasn't played recently
+# MAGIC
+# MAGIC Depending on the size of your dataset, the number of clusters, and how often you run your dashboard queries, it may make sense to save the cluster descriptions as a separate dataset and merge it at query time.
 
 # COMMAND ----------
 
-# TO DO: Add descriptive names.
+from pyspark.sql.functions import when
+
+# Add a "category" column based on the predictions
+df_category = df_clustered.withColumn("author_category",
+                                      when(df_clustered.prediction == 0, "New to the game")
+                                      .when(df_clustered.prediction == 1, "Played a lot recently")
+                                      .when(df_clustered.prediction == 2, "Veteran who hasn't played recently")
+                                      .otherwise("Unknown"))
+
+# Show the resulting dataframe
+display(df_category)
 
 # COMMAND ----------
 
@@ -172,6 +190,6 @@ database_name = "new_world"
 table_name = "results_clustered"
 
 # Use "delta" format for Unity Catalog
-df_clustered.write \
+df_category.write \
     .format("delta") \
     .saveAsTable(f"{database_name}.{table_name}")
