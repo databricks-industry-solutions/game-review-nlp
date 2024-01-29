@@ -1,0 +1,626 @@
+{
+  "datasets": [
+    {
+      "name": "885f1eb5",
+      "displayName": "results_clustered",
+      "query": "SELECT\n  reviewsCleaned,\n  chunk,\n  ner_label,\n  author_steamid,\n  author_num_reviews,\n  author_num_games_owned,\n  author_last_played,\n  author_playtime_forever,\n  author_playtime_at_review,\n  author_playtime_at_last_two_weeks,\n  features,\n  prediction,\n  author_category\nFROM\n  gaming_nlp.new_world.results_clustered"
+    },
+    {
+      "name": "ae07bb26",
+      "displayName": "distinct_chunks",
+      "query": "SELECT DISTINCT\n\tchunk as Aspects,\n  reviewsCleaned as Feedback,\n  prediction as Author_Cluster,\n  author_category as Author_Category\nFROM\n(\nSELECT * FROM gaming_nlp.new_world.results_clustered\nwhere chunk IN (\nSELECT chunk\nFROM gaming_nlp.new_world.results_clustered\nGROUP BY chunk\nhaving count(chunk)>5\n)\n)"
+    },
+    {
+      "name": "b9eab01e",
+      "displayName": "aspect_by_cluster",
+      "query": "with cte as (\n  SELECT\n    chunk as aspect,\n    ner_label as sentiment,\n    prediction as author_cluster,\n    author_category as author_category,\n    count(*) as freq\n  FROM\n    gaming_nlp.new_world.results_clustered\n  GROUP BY\n    chunk,\n    ner_label,\n    prediction,\n    author_category\n  ORDER BY\n    freq desc,\n    chunk asc\n)\nselect\n  aspect,\n  sum(positiveSent) as posSent,\n  sum(negativeSent) as negSent,\n  sum(positiveSent) + sum(negativeSent) as TotalRev,\n  author_cluster,\n  author_category\nfrom\n  (\n    select\n      aspect,\n      if(sentiment = \"POS\", freq, 0) as positiveSent,\n      if(sentiment = \"NEG\", freq, 0) as negativeSent,\n      author_cluster,\n      author_category\n    from\n      cte\n  ) c1\ngroup by\n  aspect,\n  author_cluster,\n  author_category\nhaving\n  TotalRev > 10\norder by\n  posSent desc"
+    }
+  ],
+  "pages": [
+    {
+      "name": "2939c039",
+      "displayName": "New Page",
+      "layout": [
+        {
+          "widget": {
+            "name": "19c827a0",
+            "queries": [
+              {
+                "name": "dashboards/01ee644da3d712ccbb47c43d62331d72/datasets/01ee644f1b0119bbb5561e6b01bed8b9_Aspects",
+                "query": {
+                  "datasetName": "ae07bb26",
+                  "fields": [
+                    {
+                      "name": "Aspects",
+                      "expression": "`Aspects`"
+                    },
+                    {
+                      "name": "Aspects_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01ee644da3d712ccbb47c43d62331d72/datasets/01ee644f423c15899b9527a361ade67b_aspect",
+                "query": {
+                  "datasetName": "b9eab01e",
+                  "fields": [
+                    {
+                      "name": "aspect",
+                      "expression": "`aspect`"
+                    },
+                    {
+                      "name": "aspect_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "aspect",
+                    "displayName": "aspect",
+                    "queryName": "dashboards/01ee644da3d712ccbb47c43d62331d72/datasets/01ee644f423c15899b9527a361ade67b_aspect"
+                  },
+                  {
+                    "fieldName": "Aspects",
+                    "displayName": "Aspects",
+                    "queryName": "dashboards/01ee644da3d712ccbb47c43d62331d72/datasets/01ee644f1b0119bbb5561e6b01bed8b9_Aspects"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Aspect"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 1,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "a047fe7b",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ae07bb26",
+                  "fields": [
+                    {
+                      "name": "Aspects",
+                      "expression": "`Aspects`"
+                    },
+                    {
+                      "name": "Author_Cluster",
+                      "expression": "`Author_Cluster`"
+                    },
+                    {
+                      "name": "Feedback",
+                      "expression": "`Feedback`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 1,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "Aspects",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "order": 100000,
+                    "title": "Aspects",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "visible": true,
+                    "displayName": "Aspects"
+                  },
+                  {
+                    "fieldName": "Feedback",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "order": 100001,
+                    "title": "Feedback",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "visible": true,
+                    "displayName": "Feedback"
+                  },
+                  {
+                    "fieldName": "Author_Cluster",
+                    "numberFormat": "0",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "integer",
+                    "displayAs": "number",
+                    "order": 100002,
+                    "title": "Author_Cluster",
+                    "allowSearch": false,
+                    "alignContent": "right",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "visible": true,
+                    "displayName": "Author_Cluster"
+                  }
+                ]
+              },
+              "invisibleColumns": [
+                {
+                  "booleanValues": [
+                    "false",
+                    "true"
+                  ],
+                  "imageUrlTemplate": "{{ @ }}",
+                  "imageTitleTemplate": "{{ @ }}",
+                  "imageWidth": "",
+                  "imageHeight": "",
+                  "linkUrlTemplate": "{{ @ }}",
+                  "linkTextTemplate": "{{ @ }}",
+                  "linkTitleTemplate": "{{ @ }}",
+                  "linkOpenInNewTab": true,
+                  "name": "Author_Category",
+                  "type": "string",
+                  "displayAs": "string",
+                  "order": 100003,
+                  "title": "Author_Category",
+                  "allowSearch": false,
+                  "alignContent": "left",
+                  "allowHTML": false,
+                  "highlightLinks": false,
+                  "useMonospaceFont": false,
+                  "preserveWhitespace": false
+                }
+              ],
+              "allowHTMLByDefault": true,
+              "itemsPerPage": 25,
+              "paginationSize": "default",
+              "condensed": true,
+              "withRowNumber": false
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 9,
+            "width": 3,
+            "height": 9
+          }
+        },
+        {
+          "widget": {
+            "name": "a252a979",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "b9eab01e",
+                  "fields": [
+                    {
+                      "name": "TotalRev",
+                      "expression": "`TotalRev`"
+                    },
+                    {
+                      "name": "aspect",
+                      "expression": "`aspect`"
+                    },
+                    {
+                      "name": "author_cluster",
+                      "expression": "`author_cluster`"
+                    },
+                    {
+                      "name": "negSent",
+                      "expression": "`negSent`"
+                    },
+                    {
+                      "name": "posSent",
+                      "expression": "`posSent`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 1,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "aspect",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "string",
+                    "displayAs": "string",
+                    "order": 100000,
+                    "title": "aspect",
+                    "allowSearch": false,
+                    "alignContent": "left",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "visible": true,
+                    "displayName": "aspect"
+                  },
+                  {
+                    "fieldName": "posSent",
+                    "numberFormat": "0",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "integer",
+                    "displayAs": "number",
+                    "order": 100001,
+                    "title": "posSent",
+                    "allowSearch": false,
+                    "alignContent": "right",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "visible": true,
+                    "displayName": "posSent"
+                  },
+                  {
+                    "fieldName": "negSent",
+                    "numberFormat": "0",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "integer",
+                    "displayAs": "number",
+                    "order": 100002,
+                    "title": "negSent",
+                    "allowSearch": false,
+                    "alignContent": "right",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "visible": true,
+                    "displayName": "negSent"
+                  },
+                  {
+                    "fieldName": "TotalRev",
+                    "numberFormat": "0",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "integer",
+                    "displayAs": "number",
+                    "order": 100003,
+                    "title": "TotalRev",
+                    "allowSearch": false,
+                    "alignContent": "right",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "visible": true,
+                    "displayName": "TotalRev"
+                  },
+                  {
+                    "fieldName": "author_cluster",
+                    "numberFormat": "0",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "imageUrlTemplate": "{{ @ }}",
+                    "imageTitleTemplate": "{{ @ }}",
+                    "imageWidth": "",
+                    "imageHeight": "",
+                    "linkUrlTemplate": "{{ @ }}",
+                    "linkTextTemplate": "{{ @ }}",
+                    "linkTitleTemplate": "{{ @ }}",
+                    "linkOpenInNewTab": true,
+                    "type": "integer",
+                    "displayAs": "number",
+                    "order": 100004,
+                    "title": "author_cluster",
+                    "allowSearch": false,
+                    "alignContent": "right",
+                    "allowHTML": false,
+                    "highlightLinks": false,
+                    "useMonospaceFont": false,
+                    "preserveWhitespace": false,
+                    "visible": true,
+                    "displayName": "author_cluster"
+                  }
+                ]
+              },
+              "invisibleColumns": [
+                {
+                  "booleanValues": [
+                    "false",
+                    "true"
+                  ],
+                  "imageUrlTemplate": "{{ @ }}",
+                  "imageTitleTemplate": "{{ @ }}",
+                  "imageWidth": "",
+                  "imageHeight": "",
+                  "linkUrlTemplate": "{{ @ }}",
+                  "linkTextTemplate": "{{ @ }}",
+                  "linkTitleTemplate": "{{ @ }}",
+                  "linkOpenInNewTab": true,
+                  "name": "author_category",
+                  "type": "string",
+                  "displayAs": "string",
+                  "order": 100005,
+                  "title": "author_category",
+                  "allowSearch": false,
+                  "alignContent": "left",
+                  "allowHTML": false,
+                  "highlightLinks": false,
+                  "useMonospaceFont": false,
+                  "preserveWhitespace": false
+                }
+              ],
+              "allowHTMLByDefault": true,
+              "itemsPerPage": 25,
+              "paginationSize": "default",
+              "condensed": true,
+              "withRowNumber": false
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 9,
+            "width": 3,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "b0244f0b",
+            "queries": [
+              {
+                "name": "dashboards/01ee644da3d712ccbb47c43d62331d72/datasets/01ee644f1b0119bbb5561e6b01bed8b9_Author_Category",
+                "query": {
+                  "datasetName": "ae07bb26",
+                  "fields": [
+                    {
+                      "name": "Author_Category",
+                      "expression": "`Author_Category`"
+                    },
+                    {
+                      "name": "Author_Category_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01ee644da3d712ccbb47c43d62331d72/datasets/01ee644f423c15899b9527a361ade67b_author_category",
+                "query": {
+                  "datasetName": "b9eab01e",
+                  "fields": [
+                    {
+                      "name": "author_category",
+                      "expression": "`author_category`"
+                    },
+                    {
+                      "name": "author_category_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "author_category",
+                    "displayName": "author_category",
+                    "queryName": "dashboards/01ee644da3d712ccbb47c43d62331d72/datasets/01ee644f423c15899b9527a361ade67b_author_category"
+                  },
+                  {
+                    "fieldName": "Author_Category",
+                    "displayName": "Author_Category",
+                    "queryName": "dashboards/01ee644da3d712ccbb47c43d62331d72/datasets/01ee644f1b0119bbb5561e6b01bed8b9_Author_Category"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Author Cluster"
+              }
+            }
+          },
+          "position": {
+            "x": 1,
+            "y": 0,
+            "width": 1,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "e4c08198",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "b9eab01e",
+                  "fields": [
+                    {
+                      "name": "aspect",
+                      "expression": "`aspect`"
+                    },
+                    {
+                      "name": "sum(negSent)",
+                      "expression": "SUM(`negSent`)"
+                    },
+                    {
+                      "name": "sum(posSent)",
+                      "expression": "SUM(`posSent`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "aspect",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "aspect"
+                },
+                "y": {
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "fields": [
+                    {
+                      "fieldName": "sum(negSent)",
+                      "displayName": "Sum of negSent"
+                    },
+                    {
+                      "fieldName": "sum(posSent)",
+                      "displayName": "Sum of posSent"
+                    }
+                  ]
+                },
+                "label": {
+                  "show": false
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "showDescription": false,
+                "title": "Frequency of Aspect"
+              },
+              "mark": {
+                "colors": [
+                  "#AB4057",
+                  "#99DDB4",
+                  "#00A972",
+                  "#FF3621",
+                  "#8BCAE7",
+                  "#AB4057",
+                  "#99DDB4",
+                  "#FCA4A1",
+                  "#919191",
+                  "#BF7080"
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 6,
+            "height": 7
+          }
+        }
+      ]
+    }
+  ]
+}
