@@ -4,11 +4,7 @@
 
 # COMMAND ----------
 
-# MAGIC %run "../Working/config/notebook_config"
-
-# COMMAND ----------
-
-# %run "../Working/02_Analysis"
+# MAGIC %run "./config/notebook_config"
 
 # COMMAND ----------
 
@@ -19,14 +15,6 @@
 
 # MAGIC %md
 # MAGIC The analysis notebook outputs a results table to Unity Catalog. In this notebook we will create author clusters to better visualize NLP results in the dashboard.
-
-# COMMAND ----------
-
-# Author cols list comes from the config notebook
-# author_cols = ["author_steamid", "author_num_reviews", "author_num_games_owned", \
-              #  "author_last_played", "author_playtime_forever", \
-              #  "author_playtime_at_review", "author_playtime_at_last_two_weeks" \
-              # ]
 
 # COMMAND ----------
 
@@ -185,14 +173,14 @@ display(df_category)
 
 # COMMAND ----------
 
-table_name = "results_clustered"
+#table_name = "results_clustered"
 
-_ =spark.sql(f"DROP TABLE IF EXISTS {database_name}.{table_name}_gold")
+_ =spark.sql(f"DROP TABLE IF EXISTS {database_name}.{game_name_sub}_gold")
 
 # Use "delta" format for Unity Catalog
 df_category.write \
     .format("delta") \
-    .saveAsTable(f"{database_name}.{table_name}_gold")
+    .saveAsTable(f"{database_name}.{game_name_sub}_gold")
 
 # COMMAND ----------
 
@@ -203,7 +191,7 @@ df_category.write \
 
 # COMMAND ----------
 
-print(f"{catalog_name}.{database_name}.{table_name}")
+print(f"{catalog_name}.{database_name}.{game_name_sub}_gold")
 
 # COMMAND ----------
 

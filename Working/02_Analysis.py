@@ -5,23 +5,32 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 0. Initiate Data Prep from 00 Notebook
+# MAGIC ## 0. Initiate Config Variables
 
 # COMMAND ----------
 
-# MAGIC %run "../Working/01_Data Preparation"
+# MAGIC %run "../Working/config/notebook_config"
+
+# COMMAND ----------
+
+# %run "../Working/01_Data Preparation"
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC
-# MAGIC ### 0a. Initialize Variables (maybe parameterize this?)
+# MAGIC ### 0a. Initialize Variables and read in data
 
 # COMMAND ----------
 
 chunk_name_list = ['server','servers']
 
-#results_path = "/Users/eduardo.brasileiro@databricks.com/Player-Feedback-Accelerator/Manager"
+# COMMAND ----------
+
+# Set catalog
+_ = spark.sql(f"USE CATALOG {catalog_name}")
+
+reviewsDF_filtered = spark.sql(f"SELECT * FROM {database_name}.{game_name_sub}_bronze")
 
 # COMMAND ----------
 
@@ -38,18 +47,18 @@ chunk_name_list = ['server','servers']
 # COMMAND ----------
 
 #You can also install this by going to the Cluster Configuration > Libraries > Install New
-!pip install demoji
+#!pip install demoji
 
 # COMMAND ----------
 
 #Unicodedata module provides access to the Unicode Character Database (UCD)
-import unicodedata as uni
+#import unicodedata as uni
 
 #Demoji helps to process emojis
-import demoji
+#import demoji
 
 #re for regular expressions
-import re
+#import re
 
 # COMMAND ----------
 
@@ -72,9 +81,6 @@ def handleEmoticons(text):
 
 # COMMAND ----------
 
-from pyspark.sql.functions import col,udf
-from pyspark.sql.types import StringType
-
 normalizeUnicodeUDF = udf(lambda text : normalizeUnicode(text), StringType())
 handleEmoticonsUDF = udf(lambda text : handleEmoticons(text), StringType())
 
@@ -91,8 +97,8 @@ display(reviewsDF_filtered_cleaned)
 
 # COMMAND ----------
 
-# Install PySpark and Spark NLP
-! pip install spark-nlp==4.2.0
+# Install Spark NLP
+#! pip install spark-nlp==4.2.0
 
 # COMMAND ----------
 
@@ -103,7 +109,7 @@ display(reviewsDF_filtered_cleaned)
 
 # MAGIC %md
 # MAGIC <b>This is important:</b><br>
-# MAGIC In order to run this successfully, intall this Maven package on the cluster:<br><br>
+# MAGIC In order to run this successfully, [install this Maven package](https://docs.databricks.com/en/libraries/package-repositories.html#maven-or-spark-package) on the cluster:<br><br>
 # MAGIC *com.johnsnowlabs.nlp:spark-nlp_2.12:4.2.0*
 
 # COMMAND ----------
@@ -113,14 +119,10 @@ display(reviewsDF_filtered_cleaned)
 
 # COMMAND ----------
 
-from pyspark.ml import Pipeline
-import pyspark.sql.functions as F
+# MAGIC %md
+# MAGIC Reference: [Aspect Based Sentiment Analysis in Spark NLP](https://colab.research.google.com/github/JohnSnowLabs/spark-nlp-workshop/blob/master/tutorials/streamlit_notebooks/ABSA_Inference.ipynb)
 
-import sparknlp
-from sparknlp.annotator import *
-from sparknlp.base import *
-
-# Reference - Aspect Based Sentiment Analysis in Spark NLP : https://colab.research.google.com/github/JohnSnowLabs/spark-nlp-workshop/blob/master/tutorials/streamlit_notebooks/ABSA_Inference.ipynb
+# COMMAND ----------
 
 # Prepares data into a format that is processable by Spark NLP. This is the entry point for every Spark NLP pipeline
 document_assembler = DocumentAssembler() \
@@ -199,6 +201,13 @@ nlp_pipeline = Pipeline(stages=[
 
 # COMMAND ----------
 
+try:
+  mlflow.set_experiment(f"/Users/{useremail}/gaming_nlp_experiment") # will try creating experiment if it doesn't exist; but when two notebooks with this code executes at the same time, could trigger a race-condition
+except:
+  pass
+
+# COMMAND ----------
+
 result = nlp_pipeline.fit(reviewsDF_filtered_cleaned).transform(reviewsDF_filtered_cleaned)
 
 # COMMAND ----------
@@ -242,45 +251,31 @@ display(analyzeManagerAspect)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC
-# MAGIC ## 3. Author Variable Distribution
-
-# COMMAND ----------
-
-display(finalResults)
+# MAGIC ## 3. Output data to Unity Catalog
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 4. Output data to Unity Catalog
+# MAGIC We can now write these results to [Unity Catalog](https://docs.databricks.com/en/data-governance/unity-catalog/index.html). We will use a catalog named <i>gaming_nlp_{username_sql}</i>, as defined in the config notebook. The catalog gets set as default further up in this notebook.
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC We can now write these results to Unity Catalog. We will use a catalog named <i>gaming_nlp</i>.
+# MAGIC One way to organize results is by having a schema for each game, here our schema is called <i>game_analysis</i>.
 
 # COMMAND ----------
 
-# MAGIC %sql
-# MAGIC USE CATALOG gaming_nlp
+# Replace blanks in the name with underscore
+game_name_sub = re.sub(r"\s", "_", f"{game_name}")
 
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC One way to organize results is by having a schema for each game, here our schema is called <i>new_world</i>.
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC
-# MAGIC DROP TABLE IF EXISTS new_world.results
-
-# COMMAND ----------
-
-database_name = "new_world"
-table_name = "results"
+# To prevent a table exists error, drop the table if it exists
+_ = spark.sql(f"DROP TABLE IF EXISTS {database_name}.{game_name_sub}_silver")
 
 # Use "delta" format for Unity Catalog
 finalResults.write \
     .format("delta") \
-    .saveAsTable(f"{database_name}.{table_name}")
+    .saveAsTable(f"{database_name}.{game_name_sub}")
+
+# COMMAND ----------
+
+

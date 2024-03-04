@@ -96,7 +96,7 @@ job_json = {
             {
                 "job_cluster_key": "game_review_cluster",
                 "new_cluster": {
-                    "spark_version": "13.3.x-scala2.12",
+                    "spark_version": "13.3.x-cpu-ml-scala2.12",
                 "spark_conf": {
                     "spark.databricks.delta.formatCheck.enabled": "false",
                     },
@@ -117,3 +117,7 @@ job_json = {
 dbutils.widgets.dropdown("run_job", "False", ["True", "False"])
 run_job = dbutils.widgets.get("run_job") == "True"
 NotebookSolutionCompanion().deploy_compute(job_json, run_job=run_job)
+
+# COMMAND ----------
+
+

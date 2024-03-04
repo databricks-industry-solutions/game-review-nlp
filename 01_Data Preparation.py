@@ -16,11 +16,7 @@
 
 # COMMAND ----------
 
-# MAGIC %run "../Working/config/notebook_config"
-
-# COMMAND ----------
-
-# %run "../Working/00_Intro & Config"
+# MAGIC %run "./config/notebook_config"
 
 # COMMAND ----------
 
@@ -98,13 +94,6 @@ review_id = {"Sega Football Manager":'1904540',
 # MAGIC If you wish to use a different game, you can specify it in the notebook_config, by looking up your game on the Steam website and getting the ID from the URL. If no game is specified, we will default to New World.
 # MAGIC
 # MAGIC If you use one of the games in the dictionary above, specifying the <i>game_name</i> is sufficient. Otherwise, please specify both <i>user_game_id</i> and <i>game_name</i>. <i>game_name</i> is used downstream to name the output table.
-
-# COMMAND ----------
-
-# user_game_id = ''
-
-# # Default to New World, this variable is also used to name the output table downstream
-# game_name = 'New World'
 
 # COMMAND ----------
 

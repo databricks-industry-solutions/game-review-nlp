@@ -37,7 +37,7 @@
 
 # COMMAND ----------
 
-# MAGIC %run "../Working/config/notebook_config"
+# MAGIC %run "./config/notebook_config"
 
 # COMMAND ----------
 
