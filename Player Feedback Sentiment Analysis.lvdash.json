@@ -3,17 +3,17 @@
     {
       "name": "885f1eb5",
       "displayName": "results_clustered",
-      "query": "SELECT\n  reviewsCleaned,\n  chunk,\n  ner_label,\n  author_steamid,\n  author_num_reviews,\n  author_num_games_owned,\n  author_last_played,\n  author_playtime_forever,\n  author_playtime_at_review,\n  author_playtime_at_last_two_weeks,\n  features,\n  prediction,\n  author_category\nFROM\n  gaming_nlp.new_world.results_clustered"
+      "query": "SELECT\n  reviewsCleaned,\n  chunk,\n  ner_label,\n  author_steamid,\n  author_num_reviews,\n  author_num_games_owned,\n  author_last_played,\n  author_playtime_forever,\n  author_playtime_at_review,\n  author_playtime_at_last_two_weeks,\n  features,\n  prediction,\n  author_category\nFROM\n  gaming_nlp.game_analysis.steam_reviews_gold"
     },
     {
       "name": "ae07bb26",
       "displayName": "distinct_chunks",
-      "query": "SELECT DISTINCT\n\tchunk as Aspects,\n  reviewsCleaned as Feedback,\n  prediction as Author_Cluster,\n  author_category as Author_Category\nFROM\n(\nSELECT * FROM gaming_nlp.new_world.results_clustered\nwhere chunk IN (\nSELECT chunk\nFROM gaming_nlp.new_world.results_clustered\nGROUP BY chunk\nhaving count(chunk)>5\n)\n)"
+      "query": "SELECT DISTINCT\n\tchunk as Aspects,\n  reviewsCleaned as Feedback,\n  prediction as Author_Cluster,\n  author_category as Author_Category\nFROM\n(\nSELECT * FROM gaming_nlp.game_analysis.steam_reviews_gold\nwhere chunk IN (\nSELECT chunk\nFROM gaming_nlp.game_analysis.steam_reviews_gold\nGROUP BY chunk\nhaving count(chunk)>5\n)\n)"
     },
     {
       "name": "b9eab01e",
       "displayName": "aspect_by_cluster",
-      "query": "with cte as (\n  SELECT\n    chunk as aspect,\n    ner_label as sentiment,\n    prediction as author_cluster,\n    author_category as author_category,\n    count(*) as freq\n  FROM\n    gaming_nlp.new_world.results_clustered\n  GROUP BY\n    chunk,\n    ner_label,\n    prediction,\n    author_category\n  ORDER BY\n    freq desc,\n    chunk asc\n)\nselect\n  aspect,\n  sum(positiveSent) as posSent,\n  sum(negativeSent) as negSent,\n  sum(positiveSent) + sum(negativeSent) as TotalRev,\n  author_cluster,\n  author_category\nfrom\n  (\n    select\n      aspect,\n      if(sentiment = \"POS\", freq, 0) as positiveSent,\n      if(sentiment = \"NEG\", freq, 0) as negativeSent,\n      author_cluster,\n      author_category\n    from\n      cte\n  ) c1\ngroup by\n  aspect,\n  author_cluster,\n  author_category\nhaving\n  TotalRev > 10\norder by\n  posSent desc"
+      "query": "with cte as (\n  SELECT\n    chunk as aspect,\n    ner_label as sentiment,\n    prediction as author_cluster,\n    author_category as author_category,\n    count(*) as freq\n  FROM\n    gaming_nlp.game_analysis.steam_reviews_gold\n  GROUP BY\n    chunk,\n    ner_label,\n    prediction,\n    author_category\n  ORDER BY\n    freq desc,\n    chunk asc\n)\nselect\n  aspect,\n  sum(positiveSent) as posSent,\n  sum(negativeSent) as negSent,\n  sum(positiveSent) + sum(negativeSent) as TotalRev,\n  author_cluster,\n  author_category\nfrom\n  (\n    select\n      aspect,\n      if(sentiment = \"POS\", freq, 0) as positiveSent,\n      if(sentiment = \"NEG\", freq, 0) as negativeSent,\n      author_cluster,\n      author_category\n    from\n      cte\n  ) c1\ngroup by\n  aspect,\n  author_cluster,\n  author_category\nhaving\n  TotalRev > 10\norder by\n  posSent desc"
     }
   ],
   "pages": [
