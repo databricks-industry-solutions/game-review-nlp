@@ -93,17 +93,14 @@ review_id = {"Sega Football Manager":'1904540',
 # MAGIC %md
 # MAGIC If you wish to use a different game, you can specify it in the notebook_config, by looking up your game on the Steam website and getting the ID from the URL. If no game is specified, we will default to New World.
 # MAGIC
-# MAGIC If you use one of the games in the dictionary above, specifying the <i>game_name</i> is sufficient. Otherwise, please specify both <i>user_game_id</i> and <i>game_name</i>. <i>game_name</i> is used downstream to name the output table.
+# MAGIC If you use one of the games in the dictionary above, specifying the <i>game_name</i> is sufficient. Otherwise, please specify both <i>user_game_id</i> and <i>game_name</i>. <i>game_name</i> is used downstream to label the game in the table.
 
 # COMMAND ----------
 
 # Check if the user passed a value present in the dictionary review_id
 if user_game_id != '':
-    # Get reviews based on the key of the user_value in the review_id dictionary
-    # game_name = list(review_id.keys())[list(review_id.values()).index(user_game_id)]
     reviews = get_n_reviews(user_game_id)
 else:
-    # Default to New World if the user value is not found in the dictionary
     reviews = get_n_reviews(review_id[game_name])
 
 # COMMAND ----------
@@ -187,6 +184,10 @@ reviewsDF_filtered = reviewsDF_filtered \
 
 # COMMAND ----------
 
+reviewsDF_filtered = reviewsDF_filtered.withColumn("game_name", lit(game_name))
+
+# COMMAND ----------
+
 #display(reviewsDF_filtered)
 
 # COMMAND ----------
@@ -209,12 +210,12 @@ _ = spark.sql(f"USE CATALOG {catalog_name}")
 # COMMAND ----------
 
 # To prevent a table exists error, drop the table if it exists
-_ = spark.sql(f"DROP TABLE IF EXISTS {database_name}.{game_name_sub}_bronze")
+_ = spark.sql(f"DROP TABLE IF EXISTS {database_name}.steam_reviews_bronze")
 
 # Use "delta" format for Unity Catalog
 reviewsDF_filtered.write \
     .format("delta") \
-    .saveAsTable(f"{database_name}.{game_name_sub}_bronze")
+    .saveAsTable(f"{database_name}.steam_reviews_bronze")
 
 # COMMAND ----------
 

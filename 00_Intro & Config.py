@@ -27,7 +27,7 @@
 # MAGIC * You can do this by opening your Cluster > Libraries Tab > Install New > Library Source: Maven > Paste the coordinates: com.johnsnowlabs.nlp:spark-nlp_2.12:4.2.0
 # MAGIC * Note: If you use the Solution Accelerator cluster, it takes care of this for you.
 # MAGIC 3. <i>Post Processing:</i> This notebook profiles and clusters the review authors, saving the results to a Delta table to be used in the dashboard.
-# MAGIC 4. <i>Player Feedback Sentiment Analysis Dashboard</i>: The dashboard uses (Databricks Lakeview Dashboards)[https://docs.databricks.com/en/dashboards/lakeview.html] and is provided in this bundle as a json file. In order to use it, you can import the dashboard by going to Dashboards > Lakeview Dashboards > Hit the down arrow next to "Create Lakeview Dashboard" > Import Lakeview Dashboard from File 
+# MAGIC 4. <i>Player Feedback Sentiment Analysis Dashboard</i>: The dashboard uses [Databricks Lakeview Dashboards](https://docs.databricks.com/en/dashboards/lakeview.html) and is provided in this bundle as a json file. In order to use it, you can import the dashboard by going to Dashboards > Lakeview Dashboards > Hit the down arrow next to "Create Lakeview Dashboard" > Import Lakeview Dashboard from File 
 # MAGIC
 
 # COMMAND ----------

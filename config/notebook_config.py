@@ -20,6 +20,8 @@ import demoji
 #re for regular expressions
 import re
 
+from pyspark.sql.functions import lit
+
 from pyspark.ml import Pipeline
 import pyspark.sql.functions as F
 from pyspark.sql.functions import col,udf

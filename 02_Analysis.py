@@ -15,7 +15,7 @@
 
 # MAGIC %md
 # MAGIC
-# MAGIC ### 0a. Initialize Variables and read in data
+# MAGIC ### 0a. Initialize variables and read in data
 
 # COMMAND ----------
 
@@ -26,7 +26,7 @@ chunk_name_list = ['server','servers']
 # Set catalog
 _ = spark.sql(f"USE CATALOG {catalog_name}")
 
-reviewsDF_filtered = spark.sql(f"SELECT * FROM {database_name}.{game_name_sub}_bronze")
+reviewsDF_filtered = spark.sql(f"SELECT * FROM {database_name}.steam_reviews_bronze")
 
 # COMMAND ----------
 
@@ -67,7 +67,7 @@ handleEmoticonsUDF = udf(lambda text : handleEmoticons(text), StringType())
 reviewsDF_filtered = reviewsDF_filtered.withColumn("reviewsNormalizeUnicode", normalizeUnicodeUDF(col("review")))
 reviewsDF_filtered = reviewsDF_filtered.withColumn("reviewsCleaned", normalizeUnicodeUDF(col("reviewsNormalizeUnicode")))
 
-reviewsDF_filtered_cleaned = reviewsDF_filtered.select("reviewsCleaned", *author_cols)
+reviewsDF_filtered_cleaned = reviewsDF_filtered.select("reviewsCleaned", *author_cols, "game_name")
 display(reviewsDF_filtered_cleaned)
 
 # COMMAND ----------
@@ -209,8 +209,8 @@ exploded = F.explode(F.arrays_zip('ner_chunk.result', 'ner_chunk.metadata'))
 select_expression_0 = F.expr("cols['result']").alias("chunk")
 select_expression_1 = F.expr("cols['metadata']['entity']").alias("ner_label")
 finalResults = result \
-                  .select('reviewsCleaned',exploded.alias("cols"), *author_cols) \
-                  .select('reviewsCleaned',select_expression_0, select_expression_1, *author_cols)
+                  .select('reviewsCleaned',exploded.alias("cols"), *author_cols, "game_name") \
+                  .select('reviewsCleaned',select_expression_0, select_expression_1, *author_cols, "game_name")
 display(finalResults)
 
 # COMMAND ----------
@@ -241,15 +241,15 @@ display(analyzeManagerAspect)
 # COMMAND ----------
 
 # Replace blanks in the name with underscore
-game_name_sub = re.sub(r"\s", "_", f"{game_name}")
+#game_name_sub = re.sub(r"\s", "_", f"{game_name}")
 
 # To prevent a table exists error, drop the table if it exists
-_ = spark.sql(f"DROP TABLE IF EXISTS {database_name}.{game_name_sub}_silver")
+_ = spark.sql(f"DROP TABLE IF EXISTS {database_name}.steam_reviews_silver")
 
 # Use "delta" format for Unity Catalog
 finalResults.write \
     .format("delta") \
-    .saveAsTable(f"{database_name}.{game_name_sub}_silver")
+    .saveAsTable(f"{database_name}.steam_reviews_silver")
 
 # COMMAND ----------
 

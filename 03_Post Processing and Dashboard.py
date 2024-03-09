@@ -27,7 +27,7 @@
 # Set catalog
 _ = spark.sql(f"USE CATALOG {catalog_name}")
 
-df = spark.sql(f"SELECT * FROM {database_name}.{game_name_sub}_silver")
+df = spark.sql(f"SELECT * FROM {database_name}.steam_reviews_silver")
 
 # COMMAND ----------
 
@@ -175,12 +175,12 @@ display(df_category)
 
 #table_name = "results_clustered"
 
-_ =spark.sql(f"DROP TABLE IF EXISTS {database_name}.{game_name_sub}_gold")
+_ =spark.sql(f"DROP TABLE IF EXISTS {database_name}.steam_reviews_gold")
 
 # Use "delta" format for Unity Catalog
 df_category.write \
     .format("delta") \
-    .saveAsTable(f"{database_name}.{game_name_sub}_gold")
+    .saveAsTable(f"{database_name}.steam_reviews_gold")
 
 # COMMAND ----------
 
@@ -191,7 +191,7 @@ df_category.write \
 
 # COMMAND ----------
 
-print(f"{catalog_name}.{database_name}.{game_name_sub}_gold")
+print(f"{catalog_name}.{database_name}.steam_reviews_gold")
 
 # COMMAND ----------
 
