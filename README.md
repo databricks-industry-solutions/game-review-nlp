@@ -3,19 +3,25 @@
 [![CLOUD](https://img.shields.io/badge/CLOUD-ALL-blue?logo=googlecloud&style=for-the-badge)](https://cloud.google.com/databricks)
 [![POC](https://img.shields.io/badge/POC-10_days-green?style=for-the-badge)](https://databricks.com/try-databricks)
 
-*Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.*
+This set of notebooks goes through 4 steps: Data Preparation, Analysis (NLP), Post Processing, and a Dashboard to extract insights from natural language reviews on Steam.
+
+1. <i>Data Preparation:</i> This notebook connects to the Steam API and returns a DataFrame with reviews and data about the author.
+2. <i>Analysis:</i> This notebook runs a NLP pipeline to extract topics and sentiments. This notebook could be replaced with a different algorithm as well.
+* In order to run this successfully, install this Maven package on the cluster: *com.johnsnowlabs.nlp:spark-nlp_2.12:4.2.0*
+* You can do this by opening your Cluster > Libraries Tab > Install New > Library Source: Maven > Paste the coordinates: com.johnsnowlabs.nlp:spark-nlp_2.12:4.2.0
+* Note: If you use the Solution Accelerator cluster, it takes care of this for you.
+3. <i>Post Processing:</i> This notebook profiles and clusters the review authors, saving the results to a Delta table to be used in the dashboard.
+4. <i>Player Feedback Sentiment Analysis Dashboard</i>: The dashboard uses [Databricks Lakeview Dashboards](https://docs.databricks.com/en/dashboards/lakeview.html) and is provided in this bundle as a json file. In order to use it, you can import the dashboard by going to Dashboards > Lakeview Dashboards > Hit the down arrow next to "Create Lakeview Dashboard" > Import Lakeview Dashboard from File 
 
 ___
-<john.doe@databricks.com>
+<eduardo.brasileiro@databricks.com> <br>
+<anil.joshi@databricks.com> <br>
+<duncan.davis@databricks.com> <br>
+<dan.morris@databricks.com> <br><br>
 
 ___
 
-
-IMAGE TO REFERENCE ARCHITECTURE
-
-___
-
-&copy; 2022 Databricks, Inc. All rights reserved. The source in this notebook is provided subject to the Databricks License [https://databricks.com/db-license-source].  All included or referenced third party libraries are subject to the licenses set forth below.
+&copy; 2024 Databricks, Inc. All rights reserved. The source in this notebook is provided subject to the Databricks License [https://databricks.com/db-license-source].  All included or referenced third party libraries are subject to the licenses set forth below.
 
 | library                                | description             | license    | source                                              |
 |----------------------------------------|-------------------------|------------|-----------------------------------------------------|
